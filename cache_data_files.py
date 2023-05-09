@@ -1,9 +1,12 @@
 
 import pandas as pd
-import numpy as np
+import os
 from covid_helper_functions import clean_dataframe, create_sentiment_per_day_df, get_article_grouped_df
 pd.options.mode.string_storage = "pyarrow"
 pd.options.mode.chained_assignment = None
+
+print("Loading dataframes...")
+
 health_data_df = pd.read_parquet('parquet/cleaned_health_data.parquet', engine='pyarrow')
 
 
@@ -27,7 +30,7 @@ def create_cached_dataframes(base_df_name, df_prefix, country_name, is_neutral_c
     return df, grouped_df, df_prod
 
 
-con_df = pd.read_parquet("conservative_news_predicted.parquet")
+con_df = pd.read_parquet("parquet/conservative_news_predicted.parquet")
 con_df = con_df.drop(columns=['Label'])
 con_df['page_num'] = None
 con_df['prediction'].replace({0: -1}, inplace=True)
@@ -41,7 +44,9 @@ con_df.date = con_df.date.dt.normalize() # get rid of hours
 con_df = con_df[['date', 'publisher', 'is_oped', 'article_id', 'prediction', 'page_num','political_ideology', 'national', 'Big_company']]
 con_df.to_parquet("parquet/cleaned_conservative_news_us.parquet")
 
+os.mkdir("cached_parquet/") # create directory for cached parquet files
 
+print("Loading Covid News...")
 # Covid News Predicted by COVID-SIEBERT
 create_cached_dataframes("us_covid_news.parquet", "us", "United States", is_neutral_class=False, us_covid=True)
 create_cached_dataframes("can_full_covid_readingweek.parquet", "can", "Canada", is_neutral_class=False)
@@ -52,6 +57,7 @@ create_cached_dataframes("us-regular-bigfive-complete.parquet", "regular_us", "U
 create_cached_dataframes("can_regular_full.parquet", "regular_can", "Canada", is_neutral_class=False, keep_top_n_publishers=40)
 create_cached_dataframes("europe_regular_full.parquet", "regular_eur", "United Kingdom", is_neutral_class=False, keep_top_n_publishers=40);
 
+print("Loading Neutral Covid News...")
 # Covid Neutral News
 create_cached_dataframes("us_full_covid_neutral.parquet", "us_neut", "United States", is_neutral_class=True)
 create_cached_dataframes("eur_covid_neutral.parquet", "eur_neut", "United Kingdom", is_neutral_class=True)

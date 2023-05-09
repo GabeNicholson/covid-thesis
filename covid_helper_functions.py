@@ -2,12 +2,7 @@ import pandas as pd
 import numpy as np
 from tsmoothie.smoother import LowessSmoother
 
-# political_ideology = (pd.read_csv('top_30_publishers_annotate_UPDATED.csv', index_col=[0]))
-political_ideology = pd.read_parquet('prod_annotated_publishers.parquet')
-
-# political_ideology = (pd.read_csv('top_30_publishers_annotate_UPDATED.csv')
-#                     .rename(columns={'Unnamed: 0': 'publisher', 'publisher': 'drop_this'})
-#                     .drop(columns=['drop_this', 'nuanced']))
+political_ideology_df = pd.read_parquet('parquet/prod_annotated_publishers.parquet')
     
 def classify_article_class(article_mean_sentiment, larger_cutoff=0.1):
     if article_mean_sentiment > larger_cutoff:
@@ -51,7 +46,7 @@ def clean_dataframe(dataframe, neutral_class=False):
     dataframe['publisher'] = dataframe['publisher'].replace('Independent (Daily Edition) The', 'Independent The')
     
     # combine online publications
-    dataframe = dataframe.merge(political_ideology, on='publisher', how='left') # left join so we don't create NA rows for Canada and UK.
+    dataframe = dataframe.merge(political_ideology_df, on='publisher', how='left') # left join so we don't create NA rows for Canada and UK.
     dataframe['date'] = pd.to_datetime(dataframe['date'])
     dataframe['page_num'] = dataframe['page_num'].astype('string[pyarrow]')
     return dataframe
@@ -104,19 +99,3 @@ def create_sentiment_per_day_df(fresh_dataframe, health_dataframe=None):
     sentiment_per_day_df['lower_bound_classification'] = lower_bound_prediction[1]
     sentiment_per_day_df['upper_bound_classification'] = upper_bound_prediction[1]
     return sentiment_per_day_df
-
-
-def cohend(d1, d2):
-    # calculate the size of samples
-    n1, n2 = len(d1), len(d2)
-    # calculate the variance of the samples
-    s1, s2 = np.var(d1, ddof=1), np.var(d2, ddof=1)
-    # calculate the pooled standard deviation
-    s = np.sqrt(((n1 - 1) * s1 + (n2 - 1) * s2) / (n1 + n2 - 2))
-    # calculate the means of the samples
-    u1, u2 = np.mean(d1), np.mean(d2)
-    # calculate the effect size
-    return (u1 - u2) / s
-
-
-# test example satka.
